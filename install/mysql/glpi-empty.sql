@@ -1386,6 +1386,7 @@ INSERT INTO `glpi_configs` VALUES ('205','core','purge_datemod','0');
 INSERT INTO `glpi_configs` VALUES ('206','core','purge_all','0');
 INSERT INTO `glpi_configs` VALUES ('207','core','purge_user_auth_changes','0');
 INSERT INTO `glpi_configs` VALUES ('208','core','purge_plugins','0');
+INSERT INTO `glpi_configs` VALUES ('209','core','display_login_source','1');
 
 ### Dump table glpi_consumableitems
 
@@ -6447,7 +6448,7 @@ INSERT INTO `glpi_profilerights` VALUES ('12','1','contact_enterprise','0');
 INSERT INTO `glpi_profilerights` VALUES ('13','1','document','0');
 INSERT INTO `glpi_profilerights` VALUES ('14','1','contract','0');
 INSERT INTO `glpi_profilerights` VALUES ('15','1','infocom','0');
-INSERT INTO `glpi_profilerights` VALUES ('16','1','knowbase','10240');
+INSERT INTO `glpi_profilerights` VALUES ('16','1','knowbase','2048');
 INSERT INTO `glpi_profilerights` VALUES ('20','1','reservation','1024');
 INSERT INTO `glpi_profilerights` VALUES ('21','1','reports','0');
 INSERT INTO `glpi_profilerights` VALUES ('22','1','dropdown','0');
@@ -8305,7 +8306,7 @@ CREATE TABLE `glpi_suppliers_tickets` (
   `tickets_id` int(11) NOT NULL DEFAULT '0',
   `suppliers_id` int(11) NOT NULL DEFAULT '0',
   `type` int(11) NOT NULL DEFAULT '1',
-  `use_notification` tinyint(1) NOT NULL DEFAULT '0',
+  `use_notification` tinyint(1) NOT NULL DEFAULT '1',
   `alternative_email` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `unicity` (`tickets_id`,`type`,`suppliers_id`),

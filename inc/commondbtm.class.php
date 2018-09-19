@@ -193,12 +193,13 @@ class CommonDBTM extends CommonGLPI {
     * @return string
    **/
    static function getTable($classname = null) {
-      if (static::$notable) {
-         return '';
-      }
 
       if ($classname === null) {
          $classname = get_called_class();
+      }
+
+      if (!class_exists($classname) || $classname::$notable) {
+         return '';
       }
 
       if (empty($_SESSION['glpi_table_of'][$classname])) {
@@ -907,10 +908,19 @@ class CommonDBTM extends CommonGLPI {
 
       if (in_array($this->getType(), $CFG_GLPI['rackable_types'])) {
          //delete relation beetween rackable type and its rack
-         $DB->delete(
-            Item_Rack::getTable(), [
-               'itemtype'  => $this->getType(),
-               'items_id'  => $this->fields['id']
+         $item_rack = new Item_Rack();
+         $item_rack->deleteByCriteria(
+            [
+               'itemtype' => $this->getType(),
+               'items_id' => $this->fields['id']
+            ]
+         );
+
+         $item_enclosure = new Item_Enclosure();
+         $item_enclosure->deleteByCriteria(
+            [
+               'itemtype' => $this->getType(),
+               'items_id' => $this->fields['id']
             ]
          );
       }
@@ -1733,7 +1743,7 @@ class CommonDBTM extends CommonGLPI {
 
 
    /**
-    * Restore an item put in the dustbin in the database.
+    * Restore an item put in the trashbin in the database.
     *
     * @param array   $input   the _POST vars returned by the item form when press restore
     * @param boolean $history do history log ? (default 1)
@@ -2395,7 +2405,7 @@ class CommonDBTM extends CommonGLPI {
                   }
                } else if (!$this->isDeleted()
                           && $this->can($ID, DELETE)) {
-                  echo Html::submit(_x('button', 'Put in dustbin'), ['name' => 'delete']);
+                  echo Html::submit(_x('button', 'Put in trashbin'), ['name' => 'delete']);
                }
             }
 
@@ -3522,9 +3532,26 @@ class CommonDBTM extends CommonGLPI {
       }
 
       foreach ($this->rawSearchOptions() as $opt) {
+         $missingFields = [];
          if (!isset($opt['id'])) {
-            throw new \Exception(get_called_class() . ': invalid search option! ' . print_r($opt, true));
+            $missingFields[] = 'id';
          }
+         if (!isset($opt['name'])) {
+            $missingFields[] = 'name';
+         }
+         if (count($missingFields) > 0) {
+            throw new \Exception(
+               vsprintf(
+                  'Invalid search option in "%1$s": missing "%2$s" field(s). %3$s',
+                  [
+                     get_called_class(),
+                     implode('", "', $missingFields),
+                     print_r($opt, true)
+                  ]
+               )
+            );
+         }
+
          $optid = $opt['id'];
          unset($opt['id']);
 
@@ -4059,9 +4086,9 @@ class CommonDBTM extends CommonGLPI {
                }
             }
          }
-         // Add information on item in dustbin
+         // Add information on item in trashbin
          if ($item->isField('is_deleted') && $item->getField('is_deleted')) {
-            $double_text = sprintf(__('%1$s - %2$s'), $double_text, __('Item in the dustbin'));
+            $double_text = sprintf(__('%1$s - %2$s'), $double_text, __('Item in the trashbin'));
          }
 
          $message_text .= "<br>[$double_text]";
@@ -4217,7 +4244,7 @@ class CommonDBTM extends CommonGLPI {
     * Clean all infos which match some criteria
     *
     * @param array   $crit    array of criteria (ex array('is_active'=>'1'))
-    * @param boolean $force   force purge not on put in dustbin (default 0)
+    * @param boolean $force   force purge not on put in trashbin (default 0)
     * @param boolean $history do history log ? (true by default)
     *
     * @return boolean
@@ -4785,9 +4812,7 @@ class CommonDBTM extends CommonGLPI {
       }
 
       $iterator = $DB->request($request);
-      $blank_params =
-         (strpos($target, '?') ? '&amp;' : '?')
-         . "id=-1&amp;withtemplate=2";
+      $blank_params = (strpos($target, '?') ? '&' : '?') . "id=-1&withtemplate=2";
       $target_blank = $target . $blank_params;
 
       if ($add && count($iterator) == 0) {
@@ -4800,7 +4825,7 @@ class CommonDBTM extends CommonGLPI {
          echo "<tr><th>" . $item->getTypeName(1)."</th>";
          echo "<th>".__('Choose a template')."</th></tr>";
          echo "<tr><td class='tab_bg_1 center' colspan='$colspan'>";
-         echo "<a href=\"$target_blank\">".__('Blank Template')."</a></td>";
+         echo "<a href=\"" . Html::entities_deep($target_blank) . "\">".__('Blank Template')."</a></td>";
          echo "</tr>";
       } else {
          echo "<tr><th>".$item->getTypeName(1)."</th>";
@@ -4924,7 +4949,7 @@ class CommonDBTM extends CommonGLPI {
 
       if ($this->maybeDeleted()) {
          $values[DELETE] = ['short' => __('Delete'),
-                                 'long'  => _x('button', 'Put in dustbin')];
+                                 'long'  => _x('button', 'Put in trashbin')];
       }
       if ($this->usenotepad) {
          $values[READNOTE] = ['short' => __('Read notes'),
@@ -5061,9 +5086,11 @@ class CommonDBTM extends CommonGLPI {
             }
 
             // if doc is an image and already inserted in content, do not attach in docitem
+            // (except if not using rich text as image will be stripped in this case)
             if (isset($input[$options['content_field']])
                 && strpos($input[$options['content_field']], $doc->fields["tag"]) !== false
-                && strpos($doc->fields['mime'], 'image/') !== false) {
+                && strpos($doc->fields['mime'], 'image/') !== false
+                && ($CFG_GLPI["use_rich_text"] || $options['use_rich_text'])) {
                $skip_docitem = true;
             }
 

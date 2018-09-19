@@ -96,6 +96,7 @@ $CFG_GLPI['languages'] = [
    'es_VE'  => ['Español (Venezuela)',       'es_VE.mo',    'es',    'es', 'spanish',              2],
    'eu_ES'  => ['Euskara',                   'eu_ES.mo',    'eu',    'eu', 'basque',               2],
    'fr_FR'  => ['Français',                  'fr_FR.mo',    'fr',    'fr', 'french',               2],
+   'fr_CA'  => ['Français (Canada)',         'fr_CA.mo',    'fr',    'fr', 'french',               2],
    'gl_ES'  => ['Galego',                    'gl_ES.mo',    'gl',    'gl', 'galician',             2],
    'el_GR'  => ['Ελληνικά',                  'el_GR.mo',    'el',    'el', 'greek',                2], // el_EL
    'he_IL'  => ['עברית',                     'he_IL.mo',    'he',    'he', 'hebrew',               2], // he_HE
@@ -198,7 +199,7 @@ $LANG             = [];
 $CFG_GLPI["unicity_types"]                = ['Budget', 'Computer', 'Contact', 'Contract',
                                                   'Infocom', 'Monitor', 'NetworkEquipment',
                                                   'Peripheral', 'Phone', 'Printer', 'Software',
-                                                  'SoftwareLicense', 'Supplier','User', 'Certicate'];
+                                                  'SoftwareLicense', 'Supplier','User', 'Certicate', 'Rack', 'Enclosure', 'Pdu'];
 
 $CFG_GLPI["state_types"]                  = ['Computer', 'Monitor', 'NetworkEquipment',
                                                   'Peripheral', 'Phone', 'Printer', 'SoftwareLicense',
@@ -272,7 +273,7 @@ $CFG_GLPI["linkuser_tech_types"]          = ['Computer', 'Monitor', 'NetworkEqui
                                                   'Peripheral', 'Phone', 'Printer', 'Software',
                                                   'SoftwareLicense', 'Certificate'];
 
-$CFG_GLPI["linkgroup_tech_types"]         = ['Computer', 'Consumable', 'Monitor', 'NetworkEquipment',
+$CFG_GLPI["linkgroup_tech_types"]         = ['Computer', 'ConsumableItem', 'Monitor', 'NetworkEquipment',
                                                   'Peripheral', 'Phone', 'Printer', 'Software',
                                                   'SoftwareLicense', 'Certificate'];
 
@@ -487,6 +488,6 @@ $CFG_GLPI['javascript'] = [
    'self-service' => ['colorpicker', 'tinymce']
 ];
 
-//Maximum time, in miliseconds a saved search should not exeed
+//Maximum time, in miliseconds a saved search should not exceed
 //so we count it on display (using automatic mode).
 $CFG_GLPI['max_time_for_count'] = 200;

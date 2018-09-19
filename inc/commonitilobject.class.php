@@ -474,18 +474,18 @@ abstract class CommonITILObject extends CommonDBTM {
     *
     * @since 9.3.1
     *
-    * @param CommonDBTM $linkclass Link class instance
-    * @param integer    $id        Item ID
-    * @param integer    $role      ITIL role
+    * @param CommonITILActor $linkclass Link class instance
+    * @param integer         $id        Item ID
+    * @param integer         $role      ITIL role
     *
     * @return integer
    **/
-   private function countActiveObjectsFor(CommonDBTM $linkclass, $id, $role) {
+   private function countActiveObjectsFor(CommonITILActor $linkclass, $id, $role) {
 
       $itemtable = $this->getTable();
       $itemfk    = $this->getForeignKeyField();
       $linktable = $linkclass->getTable();
-      $field     = $linkclass->getForeignKeyField();
+      $field     = $linkclass::$items_id_2;
 
       return countElementsInTable(
          [$itemtable, $linktable], [
@@ -770,7 +770,9 @@ abstract class CommonITILObject extends CommonDBTM {
             switch ($input['_itil_assign']['_type']) {
                case "user" :
                   if (!empty($this->userlinkclass)
-                      && ($input['_itil_assign']['users_id'] > 0)) {
+                      && ((isset($input['_itil_assign']['alternative_email'])
+                           && $input['_itil_assign']['alternative_email'])
+                          || $input['_itil_assign']['users_id'] > 0)) {
                      $useractors = new $this->userlinkclass();
                      if (isset($input['_auto_update'])
                          || $useractors->can(-1, CREATE, $input['_itil_assign'])) {
@@ -813,7 +815,9 @@ abstract class CommonITILObject extends CommonDBTM {
 
                case "supplier" :
                   if (!empty($this->supplierlinkclass)
-                      && ($input['_itil_assign']['suppliers_id'] > 0)) {
+                      && ((isset($input['_itil_assign']['alternative_email'])
+                           && $input['_itil_assign']['alternative_email'])
+                          || $input['_itil_assign']['suppliers_id'] > 0)) {
                      $supplieractors = new $this->supplierlinkclass();
                      if (isset($input['_auto_update'])
                          || $supplieractors->can(-1, CREATE, $input['_itil_assign'])) {
@@ -1725,13 +1729,17 @@ abstract class CommonITILObject extends CommonDBTM {
              && is_array($input['_additional_suppliers_assigns'])
              && count($input['_additional_suppliers_assigns'])) {
 
-            $input2 = [$supplieractors->getItilObjectForeignKey() => $this->fields['id'],
-                            'type'                                     => CommonITILActor::ASSIGN];
+            $input2 = [
+               $supplieractors->getItilObjectForeignKey() => $this->fields['id'],
+               'type'                                     => CommonITILActor::ASSIGN,
+               '_from_object'                             => true
+            ];
 
-            foreach ($input['_additional_suppliers_assigns'] as $tmp) {
-               if ($tmp > 0) {
-                  $input2['suppliers_id'] = $tmp;
-                  $input2['_from_object'] = true;
+            foreach ($input["_additional_suppliers_assigns"] as $tmp) {
+               if (isset($tmp['suppliers_id'])) {
+                  foreach ($tmp as $key => $val) {
+                     $input2[$key] = $val;
+                  }
                   $supplieractors->add($input2);
                }
             }
@@ -2494,40 +2502,49 @@ abstract class CommonITILObject extends CommonDBTM {
       if (isset($this->suppliers[$type]) && count($this->suppliers[$type])) {
          foreach ($this->suppliers[$type] as $d) {
             echo "<div class='actor_row'>";
-            $k = $d['suppliers_id'];
+            $suppliers_id = $d['suppliers_id'];
+
             echo "$mandatory$suppliericon&nbsp;";
-            if ($supplier->getFromDB($k)) {
-               echo $supplier->getLink(['comments' => $showsupplierlink]);
-               echo "&nbsp;";
-               $tmpname = Dropdown::getDropdownName($supplier->getTable(), $k, 1);
-               Html::showToolTip($tmpname['comment']);
 
-               if ($CFG_GLPI['notifications_mailing']) {
-                  $text = __('Email followup')."&nbsp;".Dropdown::getYesNo($d['use_notification']).
-                  '<br>';
+            $email = $d['alternative_email'];
+            if ($suppliers_id) {
+               if ($supplier->getFromDB($suppliers_id)) {
+                  echo $supplier->getLink(['comments' => $showsupplierlink]);
+                  echo "&nbsp;";
 
-                  if ($d['use_notification']) {
-                     $supemail = $d['alternative_email'];
-                     if (empty($supemail)) {
-                        $supemail = $supplier->fields['email'];
-                     }
-                     $text .= sprintf(__('%1$s: %2$s'), __('Email'), $supemail);
+                  $tmpname = Dropdown::getDropdownName($supplier->getTable(), $suppliers_id, 1);
+                  Html::showToolTip($tmpname['comment']);
+
+                  if (empty($email)) {
+                     $email = $supplier->fields['email'];
                   }
-                  if ($canedit) {
-                     $opt = ['awesome-class' => 'fa-envelope',
-                                  'popup' => $linksupplier->getFormURLWithID($d['id'])];
-                     Html::showToolTip($text, $opt);
-                  }
-
                }
-
+            } else {
+               echo "<a href='mailto:$email'>$email</a>";
             }
+
+            if ($CFG_GLPI['notifications_mailing']) {
+               $text = __('Email followup')
+                  . "&nbsp;" . Dropdown::getYesNo($d['use_notification'])
+                  . '<br />';
+
+               if ($d['use_notification']) {
+                  $text .= sprintf(__('%1$s: %2$s'), __('Email'), $email);
+               }
+               if ($canedit) {
+                  $opt = ['awesome-class' => 'fa-envelope',
+                          'popup' => $linksupplier->getFormURLWithID($d['id'])];
+                  Html::showToolTip($text, $opt);
+               }
+            }
+
             if ($canedit && $candelete) {
                Html::showSimpleForm($linksupplier->getFormURL(), 'delete',
                                     _x('button', 'Delete permanently'),
                                     ['id' => $d['id']],
                                     'fa-times-circle');
             }
+
             echo '</div>';
          }
       }
@@ -5409,7 +5426,7 @@ abstract class CommonITILObject extends CommonDBTM {
          $item_num = 1;
          $bgcolor  = $_SESSION["glpipriority_".$item->fields["priority"]];
 
-         echo Search::showNewLine($p['output_type'], $p['row_num']%2);
+         echo Search::showNewLine($p['output_type'], $p['row_num']%2, $item->isDeleted());
 
          $check_col = '';
          if (($candelete || $canupdate)

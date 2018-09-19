@@ -143,10 +143,10 @@ function UpdateContent($DB, $duree, $rowlimit, $conv_utf8, $complete_utf8) {
    // $histMySql, nom de la machine serveur MySQl
    // $duree=timeout pour changement de page (-1 = aucun)
 
-   $result = $DB->list_tables();
+   $result = $DB->listTables();
    $numtab = 0;
-   while ($t=$DB->fetch_row($result)) {
-      $tables[$numtab] = $t[0];
+   while ($t = $result->next()) {
+      $tables[$numtab] = $t['TABLE_NAME'];
       $numtab++;
    }
 
@@ -310,8 +310,7 @@ if (!isset($_GET["rowlimit"])) {
    $rowlimit = $_GET["rowlimit"];
 }
 
-$tab = $DB->list_tables();
-$tot = $DB->numrows($tab);
+$tot = $DB->listTables()->count();
 
 if (isset($offsettable)) {
    if ($offsettable>=0) {

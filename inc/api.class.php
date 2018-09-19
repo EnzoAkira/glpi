@@ -1614,6 +1614,10 @@ abstract class API extends CommonGLPI {
                   $object['entities_id'] = $_SESSION['glpiactive_entity'];
                }
 
+               // add an entry to match gui post (which contains submit button)
+               // to force having messages after redirect
+               $object["_add"] = true;
+
                //add current item
                $object = Toolbox::sanitize($object);
                $new_id = $item->add($object);
@@ -1774,7 +1778,7 @@ abstract class API extends CommonGLPI {
     *    - 'input' : Array of objects with fields of itemtype to be updated.
     *                Mandatory.
     *                You must provide in each object a key named 'id' to identify item to delete.*
-    *    - 'force_purge' : boolean, if itemtype have a dustbin, you can force purge (delete finally).
+    *    - 'force_purge' : boolean, if itemtype have a trashbin, you can force purge (delete finally).
     *                      Optionnal.
     *    - 'history' : boolean, default true, false to disable saving of deletion in global history.
     *                  Optionnal.

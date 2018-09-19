@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection ALL */
 /**
  * ---------------------------------------------------------------------
  * GLPI - Gestionnaire Libre de Parc Informatique

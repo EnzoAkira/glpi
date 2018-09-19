@@ -71,10 +71,10 @@ function xmlbackup() {
    //on parcoure la DB et on liste tous les noms des tables dans $table
    //on incremente $query[] de "select * from $table"  pour chaque occurence de $table
 
-   $result = $DB->list_tables();
+   $result = $DB->listTables();
    $i      = 0;
-   while ($line = $DB->fetch_row($result)) {
-      $table = $line[0];
+   while ($line = $result->next()) {
+      $table = $line['TABLE_NAME'];
 
       $query[$i] = "SELECT *
                     FROM `$table`";
@@ -353,10 +353,10 @@ function backupMySql($DB, $dumpFile, $duree, $rowlimit) {
       gzwrite ($fileHandle, $todump);
    }
 
-   $result = $DB->list_tables();
+   $result = $DB->listTables();
    $numtab = 0;
-   while ($t = $DB->fetch_row($result)) {
-      $tables[$numtab] = $t[0];
+   while ($t = $result->next()) {
+      $tables[$numtab] = $t['TABLE_NAME'];
       $numtab++;
    }
 
@@ -467,8 +467,7 @@ if (isset($_GET["dump"]) && $_GET["dump"] != "") {
          $fichier = $_GET["fichier"];
       }
 
-      $tab = $DB->list_tables();
-      $tot = $DB->numrows($tab);
+      $tot = $DB->listTables()->count();
       if (isset($offsettable)) {
          if ($offsettable >= 0) {
             $percent = min(100, round(100*$offsettable/$tot, 0));

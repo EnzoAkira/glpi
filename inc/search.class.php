@@ -1802,16 +1802,18 @@ class Search {
             }
          }
       } else {
-         echo "<div class='center pager_controls'>".
-         $map_link = "<input type='checkbox' name='as_map' id='as_map' value='1'";
-         if ($data['search']['as_map'] == 1) {
-            $map_link .= " checked='checked'";
+         echo "<div class='center pager_controls'>";
+         if (null == $item || $item->maybeLocated()) {
+            $map_link = "<input type='checkbox' name='as_map' id='as_map' value='1'";
+            if ($data['search']['as_map'] == 1) {
+               $map_link .= " checked='checked'";
+            }
+            $map_link .= "/>";
+            $map_link .= "<label for='as_map'><span title='".__s('Show as map')."' class='pointer fa fa-globe'
+               onClick=\"toogle('as_map','','','');
+                           document.forms['searchform".$data["itemtype"]."'].submit();\"></span></label>";
+            echo $map_link;
          }
-         $map_link .= "/>";
-         $map_link .= "<label for='as_map'><span title='".__s('Show as map')."' class='pointer fa fa-globe'
-            onClick=\"toogle('as_map','','','');
-                        document.forms['searchform".$data["itemtype"]."'].submit();\"></span></label>";
-         echo $map_link;
 
          if ($item !== null && $item->maybeDeleted()) {
             echo self::isDeletedSwitch($data['search']['is_deleted']);
@@ -1838,8 +1840,8 @@ class Search {
 
       $rand = mt_rand();
       return "<div class='switch grey_border pager_controls'>".
-             "<label for='is_deletedswitch$rand' title='".__s('Show the dustbin')."' >".
-                "<span class='sr-only'>" . __s('Show the dustbin') . "</span>" .
+             "<label for='is_deletedswitch$rand' title='".__s('Show the trashbin')."' >".
+                "<span class='sr-only'>" . __s('Show the trashbin') . "</span>" .
                 "<input type='hidden' name='is_deleted' value='0' /> ".
                 "<input type='checkbox' id='is_deletedswitch$rand' name='is_deleted' value='1' ".
                   ($is_deleted?"checked='checked'":"").
@@ -4378,7 +4380,6 @@ class Search {
 
       $searchopt  = &self::getOptions($itemtype);
 
-      $NAME       = "ITEM_";
       $table      = $searchopt[$ID]["table"];
       $field      = $searchopt[$ID]["field"];
 
@@ -4393,12 +4394,15 @@ class Search {
          }
       }
 
+      $out = "";
+
       switch ($table.".".$field) {
          case "glpi_tickets.priority" :
          case "glpi_problems.priority" :
          case "glpi_changes.priority" :
          case "glpi_projects.priority" :
-            return " style=\"background-color:".$_SESSION["glpipriority_".$data[$num][0]['name']].";\" ";
+            $out = " style=\"background-color:".$_SESSION["glpipriority_".$data[$num][0]['name']].";\" ";
+            break;
 
          case "glpi_tickets.time_to_resolve" :
          case "glpi_tickets.internal_time_to_resolve" :
@@ -4411,15 +4415,23 @@ class Search {
                 && !empty($data[$num][0]['name'])
                 && ($data[$num][0]['status'] != CommonITILObject::WAITING)
                 && ($data[$num][0]['name'] < $_SESSION['glpi_currenttime'])) {
-               return " style=\"background-color: #cf9b9b\" ";
+               $out = " style=\"background-color: #cf9b9b\" ";
             }
+            break;
 
          case "glpi_projectstates.color" :
-            return " style=\"background-color:".$data[$num][0]['name'].";\" ";
+            $out = " style=\"background-color:".$data[$num][0]['name'].";\" ";
+            break;
 
-         default :
-            return "";
+         case "glpi_projectstates.name" :
+            if (array_key_exists('color', $data[$num][0])) {
+               $out = " style=\"background-color:".$data[$num][0]['color'].";\" ";
+            }
+            break;
+
       }
+
+      return $out;
    }
 
 
@@ -4913,23 +4925,14 @@ class Search {
 
             case 'glpi_projectstates.name':
                $out = '';
-               $color_iterator = $DB->request([
-                  'SELECT' => ['color'],
-                  'FROM'   => 'glpi_projectstates',
-                  'WHERE'  => ['name' => $DB->escape($data[$num][0]['name'])]
-               ]);
-               while ($color = $color_iterator->next()) {
-                  $color = $color['color'];
-                  $out   = "<div style=\"background-color:".$color.";\">";
-                  $name = $data[$num][0]['name'];
-                  if (isset($data[$num][0]['trans'])) {
-                     $name = $data[$num][0]['trans'];
-                  }
-                  if ($itemtype == 'ProjectState') {
-                     $out .=   "<a href='".ProjectState::getFormURLWithID($data[$num][0]["id"])."'>". $name."</a></div>";
-                  } else {
-                     $out .= $name."</div>";
-                  }
+               $name = $data[$num][0]['name'];
+               if (isset($data[$num][0]['trans'])) {
+                  $name = $data[$num][0]['trans'];
+               }
+               if ($itemtype == 'ProjectState') {
+                  $out =   "<a href='".ProjectState::getFormURLWithID($data[$num][0]["id"])."'>". $name."</a></div>";
+               } else {
+                  $out = $name;
                }
                return $out;
 
@@ -5333,15 +5336,17 @@ class Search {
             }
             $count_display++;
             // Get specific display if available
-            $itemtype = getItemTypeForTable($table);
-            if ($item = getItemForItemtype($itemtype)) {
-               $tmpdata  = $data[$num][$k];
-               // Copy name to real field
-               $tmpdata[$field] = $data[$num][$k]['name'];
+            if (isset($table)) {
+               $itemtype = getItemTypeForTable($table);
+               if ($item = getItemForItemtype($itemtype)) {
+                  $tmpdata  = $data[$num][$k];
+                  // Copy name to real field
+                  $tmpdata[$field] = $data[$num][$k]['name'];
 
-               $specific = $item->getSpecificValueToDisplay($field, $tmpdata,
-                                                            ['html'      => true,
-                                                                  'searchopt' => $searchopt[$ID]]);
+                  $specific = $item->getSpecificValueToDisplay($field, $tmpdata,
+                                                               ['html'      => true,
+                                                                     'searchopt' => $searchopt[$ID]]);
+               }
             }
             if (!empty($specific)) {
                $out .= $specific;
@@ -5366,13 +5371,6 @@ class Search {
          }
       }
       return $out;
-
-      // Trans in group concat
-      if (count($split) == 3 && !empty($split[1])) {
-         return Dropdown::getValueWithUnit($split[1], $unit);
-      }
-
-      return Dropdown::getValueWithUnit($split[0], $unit);
    }
 
 

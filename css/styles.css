@@ -192,6 +192,10 @@ a:hover {
    color: black;
 }
 
+a.target-deleted {
+   text-decoration:line-through;
+}
+
 hr {
    border: 1px solid #cccccc;
 }
@@ -1865,7 +1869,7 @@ a.icon_nav_move:hover img {
 #planning_filter ul.filters > li label {
    padding-left: 4px;
    line-height: 16px;
-   width: 200px;
+   width: 185px;
    overflow: hidden;
    text-overflow: ellipsis;
    display: inline-block;
@@ -1913,6 +1917,9 @@ a.icon_nav_move:hover img {
    display: block;
 }
 
+#planning_filter ul.filters > li.group_users.expanded ul.group_listofusers > li label {
+   width: 175px;
+}
 #planning_filter .planning_link {
    text-align: center;
    display: block;

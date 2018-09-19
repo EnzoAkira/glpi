@@ -571,7 +571,8 @@ class Transfer extends CommonDBTM {
       // Tickets
       if ($this->options['keep_ticket']) {
          foreach ($CFG_GLPI["ticket_types"] as $itemtype) {
-            if (isset($this->item_search[$itemtype])) {
+            if (isset($this->needtobe_transfer[$itemtype])
+                && count($this->needtobe_transfer[$itemtype])) {
                $iterator = $DB->request([
                   'SELECT DISTINCT' => 'glpi_tickets.id',
                   'FROM'            => 'glpi_tickets',
@@ -585,7 +586,7 @@ class Transfer extends CommonDBTM {
                   ],
                   'WHERE'           => [
                      'itemtype'  => $itemtype,
-                     'items_id'  => $this->item_search[$itemtype]
+                     'items_id'  => $this->needtobe_transfer[$itemtype]
                   ]
                ]);
 
@@ -641,33 +642,35 @@ class Transfer extends CommonDBTM {
                   $DB->delete('glpi_contracts_items', ['id' => $contracts_items]);
                }
 
-               $iterator = $DB->request([
-                  'SELECT'       => [
-                     'contracts_id',
-                     'glpi_contracts.entities_id',
-                     'glpi_contracts.is_recursive'
-                  ],
-                  'FROM'            => 'glpi_contracts_items',
-                  'LEFT JOIN'       => [
-                     'glpi_contracts' => [
-                        'FKEY' => [
-                           'glpi_contracts_items'  => 'contracts_id',
-                           'glpi_contracts'        => 'id'
+               if (count($this->needtobe_transfer[$itemtype])) {
+                  $iterator = $DB->request([
+                     'SELECT'       => [
+                        'contracts_id',
+                        'glpi_contracts.entities_id',
+                        'glpi_contracts.is_recursive'
+                     ],
+                     'FROM'            => 'glpi_contracts_items',
+                     'LEFT JOIN'       => [
+                        'glpi_contracts' => [
+                           'FKEY' => [
+                              'glpi_contracts_items'  => 'contracts_id',
+                              'glpi_contracts'        => 'id'
+                           ]
                         ]
+                     ],
+                     'WHERE'           => [
+                        'itemtype'  => $itemtype,
+                        'items_id'  => $this->needtobe_transfer[$itemtype]
                      ]
-                  ],
-                  'WHERE'           => [
-                     'itemtype'  => $itemtype,
-                     'items_id'  => $this->needtobe_transfer[$itemtype]
-                  ]
-               ]);
+                  ]);
 
-               while ($data = $iterator->next()) {
-                  if ($data['is_recursive']
-                        && in_array($data['entities_id'], $to_entity_ancestors)) {
-                     $this->addNotToBeTransfer('Contract', $data['contracts_id']);
-                  } else {
-                     $this->addToBeTransfer('Contract', $data['contracts_id']);
+                  while ($data = $iterator->next()) {
+                     if ($data['is_recursive']
+                           && in_array($data['entities_id'], $to_entity_ancestors)) {
+                        $this->addNotToBeTransfer('Contract', $data['contracts_id']);
+                     } else {
+                        $this->addToBeTransfer('Contract', $data['contracts_id']);
+                     }
                   }
                }
             }
@@ -1634,7 +1637,7 @@ class Transfer extends CommonDBTM {
                $newlicID = -1;
                //// If exists : increment number by 1
                if (count($iterator)) {
-                  $data     = $DB->fetch_assoc($result);
+                  $data     = $iterator->next();
                   $newlicID = $data['id'];
                   $license->update(['id'     => $data['id'],
                                           'number' => $data['number']+1]);
@@ -3341,7 +3344,7 @@ class Transfer extends CommonDBTM {
                      1 => __('Preserve')];
 
       $clean = [0 => __('Preserve'),
-                     1 => _x('button', 'Put in dustbin'),
+                     1 => _x('button', 'Put in trashbin'),
                      2 => _x('button', 'Delete permanently')];
 
       echo "<tr class='tab_bg_1'>";

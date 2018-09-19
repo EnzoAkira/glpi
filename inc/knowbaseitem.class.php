@@ -130,7 +130,6 @@ class KnowbaseItem extends CommonDBVisible {
 
 
    function canUpdateItem() {
-
       // Personal knowbase or visibility and write access
       return (Session::haveRight(self::$rightname, self::KNOWBASEADMIN)
               || (Session::getCurrentInterface() == "central"
@@ -514,6 +513,10 @@ class KnowbaseItem extends CommonDBVisible {
 
       if (Session::getLoginUserID()) {
          $where['`glpi_knowbaseitems_users`.`users_id`'] = Session::getLoginUserID();
+
+         if (!Session::haveRight(self::$rightname, READ)) {
+            $where['OR']['glpi_knowbaseitems.is_faq'] = 1;
+         }
       }
 
       // Groups
@@ -1275,6 +1278,12 @@ class KnowbaseItem extends CommonDBVisible {
                } else {
                   $where = $where_1;
                }
+
+               // Add visibility date
+               $where .= " AND (`glpi_knowbaseitems`.`begin_date` IS NULL
+                                OR `glpi_knowbaseitems`.`begin_date` < NOW())
+                           AND (`glpi_knowbaseitems`.`end_date` IS NULL
+                                OR `glpi_knowbaseitems`.`end_date` > NOW()) ";
             }
             break;
 

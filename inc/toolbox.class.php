@@ -399,7 +399,7 @@ class Toolbox {
       $msg = "";
       if (function_exists('debug_backtrace')) {
          $bt  = debug_backtrace();
-         if (count($bt) > 1) {
+         if (count($bt) > 2) {
             if (isset($bt[2]['class'])) {
                $msg .= $bt[2]['class'].'::';
             }
@@ -565,13 +565,15 @@ class Toolbox {
    }
 
 
-   /**
-    * Log a message in log file
-    *
-    * @param $name   string   name of the log file
-    * @param $text   string   text to log
-    * @param $force  boolean  force log in file not seeing use_log_in_files config (false by default)
-   **/
+    /**
+     * Log a message in log file
+     *
+     * @param $name   string   name of the log file
+     * @param $text   string   text to log
+     * @param $force  boolean  force log in file not seeing use_log_in_files config (false by default)
+     * @return bool
+     **/
+
    static function logInFile($name, $text, $force = false) {
       global $CFG_GLPI;
 
@@ -827,8 +829,8 @@ class Toolbox {
                        ? null : (is_resource($value)
                        ? $value : $DB->escape(
                           str_replace(
-                             ['&#039;', '&quot'],
-                             ["'", "'"],
+                             ['&#039;', '&#39;', '&quot'],
+                             ["'", "'", "'"],
                              $value
                           )
                        ))
@@ -2876,8 +2878,9 @@ class Toolbox {
     * @return string the IP address
     */
    public static function getRemoteIpAddress() {
-      return (isset($_SERVER["HTTP_X_FORWARDED_FOR"]) ? $_SERVER["HTTP_X_FORWARDED_FOR"]
-                                                      : $_SERVER["REMOTE_ADDR"]);
+      return (isset($_SERVER["HTTP_X_FORWARDED_FOR"]) ?
+         self::clean_cross_side_scripting_deep($_SERVER["HTTP_X_FORWARDED_FOR"]):
+         $_SERVER["REMOTE_ADDR"]);
    }
 
    /**

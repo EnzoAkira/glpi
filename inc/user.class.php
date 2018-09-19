@@ -1401,7 +1401,7 @@ class User extends CommonDBTM {
                      'WHERE'  => ['ldap_group_dn' => Toolbox::addslashes_deep($v[$i]['ou'])]
                   ]);
 
-                  while ($group = $iterator->next()) {
+                  while ($group = $group_iterator->next()) {
                      $this->fields["_groups"][] = $group['id'];
                   }
                }
@@ -1417,6 +1417,7 @@ class User extends CommonDBTM {
                    && ($v[$i][$field]['count'] > 0)) {
 
                   unset($v[$i][$field]['count']);
+                  $lgroups = [];
                   foreach (Toolbox::addslashes_deep($v[$i][$field]) as $lgroup) {
                      $lgroups[] = [
                         new \QueryExpression($DB::quoteValue($lgroup).
@@ -1433,7 +1434,7 @@ class User extends CommonDBTM {
                      ]
                   ]);
 
-                  while ($group = $iterator->next()) {
+                  while ($group = $group_iterator->next()) {
                      $this->fields["_groups"][] = $group['id'];
                   }
                }
@@ -4031,7 +4032,7 @@ class User extends CommonDBTM {
 
                $type_name = $item->getTypeName();
 
-               while ($data = $iterator->next()) {
+               while ($data = $group_iterator->next()) {
                   $nb++;
                   $cansee = $item->can($data["id"], READ);
                   $link   = $data["name"];
@@ -4163,7 +4164,7 @@ class User extends CommonDBTM {
             $myuser->update($tmp);
             break;
 
-         //Put user in dustbin
+         //Put user in trashbin
          case 1 :
             $myuser->delete($tmp);
             break;

@@ -38,11 +38,14 @@ if (!defined('GLPI_ROOT')) {
 /**
  * ITILSolution Class
 **/
-class ITILSolution extends CommonDBTM {
+class ITILSolution extends CommonDBChild {
 
    // From CommonDBTM
    public $dohistory                   = true;
    private $item                       = null;
+
+   static public $itemtype = 'itemtype'; // Class name or field name (start with itemtype) for link to Parent
+   static public $items_id = 'items_id'; // Field name
 
    static function getTypeName($nb = 0) {
       return _n('Solution', 'Solutions', $nb);
@@ -282,6 +285,14 @@ class ITILSolution extends CommonDBTM {
          $this->item->getFromDB($input['items_id']);
       }
 
+      // check itil object is not already solved
+      if (in_array($this->item->fields["status"], $this->item->getSolvedStatusArray())) {
+         Session::addMessageAfterRedirect(__("The item is already solved, did anyone pushed a solution before you ?"),
+                                          false, ERROR);
+         return false;
+      }
+
+
       //default status for global solutions
       $status = CommonITILValidation::ACCEPTED;
       if ($input['itemtype'] == Ticket::getType()) {
@@ -343,6 +354,7 @@ class ITILSolution extends CommonDBTM {
       if ($this->item->getType() == 'Ticket' && !isset($this->input['_linked_ticket'])) {
          Ticket_Ticket::manageLinkedTicketsOnSolved($this->item->getID(), $this);
       }
+      parent::post_addItem();
    }
 
 

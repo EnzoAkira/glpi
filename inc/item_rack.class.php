@@ -102,7 +102,8 @@ class Item_Rack extends CommonDBRelation {
          'FROM'   => self::getTable(),
          'WHERE'  => [
             'racks_id' => $rack->getID()
-         ]
+         ],
+         'ORDER' => 'position DESC'
       ]);
       $link = new self();
 
@@ -481,7 +482,10 @@ JAVASCRIPT;
                }
             }
 
-            $power += $model->fields['power_consumption'];
+            if (array_key_exists('power_consumption', $model->fields)) { // PDU does not consume energy
+               $power += $model->fields['power_consumption'];
+            }
+
             $weight += $model->fields['weight'];
          } else {
             $units[Rack::FRONT][$row['position']] = 1;
