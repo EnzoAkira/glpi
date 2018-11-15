@@ -565,15 +565,13 @@ class Toolbox {
    }
 
 
-    /**
-     * Log a message in log file
-     *
-     * @param $name   string   name of the log file
-     * @param $text   string   text to log
-     * @param $force  boolean  force log in file not seeing use_log_in_files config (false by default)
-     * @return bool
-     **/
-
+   /**
+    * Log a message in log file
+    *
+    * @param $name   string   name of the log file
+    * @param $text   string   text to log
+    * @param $force  boolean  force log in file not seeing use_log_in_files config (false by default)
+   **/
    static function logInFile($name, $text, $force = false) {
       global $CFG_GLPI;
 
@@ -2997,7 +2995,7 @@ class Toolbox {
     */
    public static function useCache() {
       global $GLPI_CACHE;
-      return $GLPI_CACHE instanceof Zend\Cache\Storage\Adapter\AbstractAdapter
+      return $GLPI_CACHE != null
          && (!defined('TU_USER') || defined('CACHED_TESTS'));
    }
 

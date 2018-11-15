@@ -83,11 +83,16 @@ class CalendarSegment extends CommonDBChild {
    static function cloneCalendar($oldid, $newid) {
       global $DB;
 
-      $query = "SELECT *
-                FROM `glpi_calendarsegments`
-                WHERE `calendars_id`='$oldid'";
+      $result = $DB->request(
+         [
+            'FROM'   => self::getTable(),
+            'WHERE'  => [
+               'calendars_id' => $oldid,
+            ]
+         ]
+      );
 
-      foreach ($DB->request($query) as $data) {
+      foreach ($result as $data) {
          $c                    = new self();
          unset($data['id']);
          $data['calendars_id'] = $newid;
@@ -121,14 +126,13 @@ class CalendarSegment extends CommonDBChild {
    /**
     * Get segments of a calendar between 2 date
     *
-    * @param $calendars_id    id of the calendar
-    * @param $begin_day       begin day number
-    * @param $begin_time      begin time to check
-    * @param $end_day         end day number
-    * @param $end_time        end time to check
+    * @param integer $calendars_id    id of the calendar
+    * @param integer $begin_day       begin day number
+    * @param string  $begin_time      begin time to check
+    * @param integer $end_day         end day number
+    * @param string  $end_time        end time to check
    **/
    static function getSegmentsBetween($calendars_id, $begin_day, $begin_time, $end_day, $end_time) {
-      global $DB;
 
       // Do not check hour if day before the end day of after the begin day
       return getAllDatasFromTable(
@@ -150,14 +154,14 @@ class CalendarSegment extends CommonDBChild {
 
 
    /**
-    * Get segments of a calendar between 2 date
+    * Get active time between begin and end time in a day
     *
-    * @param $calendars_id    id of the calendar
-    * @param $day             day number
-    * @param $begin_time      begin time to check
-    * @param $end_time        end time to check
+    * @param integer $calendars_id    id of the calendar
+    * @param integer $day             day number
+    * @param string  $begin_time      begin time to check
+    * @param string  $end_time        end time to check
     *
-    * @return timestamp value
+    * @return integer Time in seconds
    **/
    static function getActiveTimeBetween($calendars_id, $day, $begin_time, $end_time) {
       global $DB;
@@ -187,17 +191,16 @@ class CalendarSegment extends CommonDBChild {
    /**
     * Add a delay of a starting hour in a specific day
     *
-    * @param $calendars_id    id of the calendar
-    * @param $day             day number
-    * @param $begin_time      begin time
-    * @param $delay           timestamp delay to add
+    * @param integer $calendars_id    id of the calendar
+    * @param integer $day             day number
+    * @param string  $begin_time      begin time
+    * @param integer $delay           timestamp delay to add
     *
-    * @return timestamp value
+    * @return string|false Ending timestamp (HH:mm:dd) of delay or false if not applicable.
    **/
    static function addDelayInDay($calendars_id, $day, $begin_time, $delay) {
       global $DB;
 
-      $sum = 0;
       // Do not check hour if day before the end day of after the begin day
       $query = "SELECT GREATEST(`begin`,'$begin_time') AS BEGIN,
                        TIMEDIFF(`end`,GREATEST(`begin`,'$begin_time')) AS TDIFF
@@ -235,15 +238,14 @@ class CalendarSegment extends CommonDBChild {
    /**
     * Get first working hour of a day
     *
-    * @param $calendars_id    id of the calendar
-    * @param $day             day number
+    * @param integer $calendars_id    id of the calendar
+    * @param integer $day             day number
     *
-    * @return time value
+    * @return string Timestamp (HH:mm:dd) of first working hour
    **/
    static function getFirstWorkingHour($calendars_id, $day) {
       global $DB;
 
-      $sum = 0;
       // Do not check hour if day before the end day of after the begin day
       $query = "SELECT MIN(`begin`)
                 FROM `glpi_calendarsegments`
@@ -262,15 +264,14 @@ class CalendarSegment extends CommonDBChild {
    /**
     * Get last working hour of a day
     *
-    * @param $calendars_id    id of the calendar
-    * @param $day             day number
+    * @param integer $calendars_id    id of the calendar
+    * @param integer $day             day number
     *
-    * @return time value
+    * @return string Timestamp (HH:mm:dd) of last working hour
    **/
    static function getLastWorkingHour($calendars_id, $day) {
       global $DB;
 
-      $sum = 0;
       // Do not check hour if day before the end day of after the begin day
       $query = "SELECT MAX(`end`)
                 FROM `glpi_calendarsegments`
@@ -289,16 +290,15 @@ class CalendarSegment extends CommonDBChild {
    /**
     * Is the hour passed is a working hour ?
     *
-    * @param $calendars_id    id of the calendar
-    * @param $day             day number
-    * @param $hour            hour (Format HH:MM::SS)
+    * @param integer $calendars_id    id of the calendar
+    * @param integer $day             day number
+    * @param string  $hour            hour (Format HH:MM::SS)
     *
     * @return boolean
    **/
    static function isAWorkingHour($calendars_id, $day, $hour) {
       global $DB;
 
-      $sum = 0;
       // Do not check hour if day before the end day of after the begin day
       $query = "SELECT *
                 FROM `glpi_calendarsegments`
@@ -321,7 +321,7 @@ class CalendarSegment extends CommonDBChild {
     * @param $calendar Calendar object
    **/
    static function showForCalendar(Calendar $calendar) {
-      global $DB, $CFG_GLPI;
+      global $DB;
 
       $ID = $calendar->getField('id');
       if (!$calendar->can($ID, READ)) {

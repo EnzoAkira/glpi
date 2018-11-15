@@ -227,17 +227,11 @@ class Calendar extends CommonDropdown {
 
 
    function cleanDBonPurge() {
-      global $DB;
 
-      $DB->delete(
-         'glpi_calendars_holidays', [
-            'calendars_id' => $this->fields['id']
-         ]
-      );
-
-      $DB->delete(
-         'glpi_calendarsegments', [
-            'calendars_id' => $this->fields['id']
+      $this->deleteChildrenAndRelationsFromDb(
+         [
+            Calendar_Holiday::class,
+            CalendarSegment::class,
          ]
       );
    }
@@ -617,12 +611,14 @@ class Calendar extends CommonDropdown {
 
 
    /**
-    * Get day number (in week) for a date
+    * Get day number (in week) for a date.
     *
-    * @param integer $date date
-   **/
+    * @param integer $date Date as a UNIX timestamp
+    *
+    * @return integer
+    */
    static function getDayNumberInWeek($date) {
-      return date('w', $date);
+      return (int)date('w', $date);
    }
 
 }

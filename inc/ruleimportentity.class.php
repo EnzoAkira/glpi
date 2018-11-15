@@ -55,10 +55,7 @@ class RuleImportEntity extends Rule {
       return 4;
    }
 
-   /**
-    * @see Rule::executeActions()
-   **/
-   function executeActions($output, $params) {
+   function executeActions($output, $params, array $input = []) {
 
       if (count($this->actions)) {
          foreach ($this->actions as $action) {
@@ -141,7 +138,7 @@ class RuleImportEntity extends Rule {
    function getAdditionalCriteriaDisplayPattern($ID, $condition, $pattern) {
 
       $crit = $this->getCriteria($ID);
-      if ($crit['field'] == '_source') {
+      if (count($crit) && $crit['field'] == '_source') {
          $name = Plugin::getInfo($pattern, 'name');
          if (empty($name)) {
             return false;
@@ -179,7 +176,6 @@ class RuleImportEntity extends Rule {
       $actions['groups_id_tech']['name']     = __('Group in charge of the hardware');
       $actions['groups_id_tech']['type']     = 'dropdown';
       $actions['groups_id_tech']['table']    = 'glpi_groups';
-
 
       return $actions;
    }

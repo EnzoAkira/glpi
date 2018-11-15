@@ -1534,8 +1534,8 @@ class Transfer extends CommonDBTM {
    /**
     * Transfer disks of an item
     *
-    * @param string $itemtype Item type
-    * @param intger $ID       ID of the item
+    * @param string  $itemtype Item type
+    * @param integer $ID       ID of the item
     */
    function transferItem_Disks($itemtype, $ID) {
       if (!$this->options['keep_disk']) {
@@ -3601,4 +3601,31 @@ class Transfer extends CommonDBTM {
    }
 
 
+   function cleanRelationData() {
+
+      parent::cleanRelationData();
+
+      if ($this->isUsedAsAutomaticTransferModel()) {
+         Config::setConfigurationValues(
+            'core',
+            [
+               'transfers_id_auto' => 0,
+            ]
+         );
+      }
+   }
+
+
+   /**
+    * Check if used as automatic transfer model.
+    *
+    * @return boolean
+    */
+   private function isUsedAsAutomaticTransferModel() {
+
+      $config_values = Config::getConfigurationValues('core', ['transfers_id_auto']);
+
+      return array_key_exists('transfers_id_auto', $config_values)
+         && $config_values['transfers_id_auto'] == $this->fields['id'];
+   }
 }

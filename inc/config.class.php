@@ -34,6 +34,7 @@ use Glpi\Exception\PasswordTooWeakException;
 use Zend\Cache\Storage\AvailableSpaceCapableInterface;
 use Zend\Cache\Storage\TotalSpaceCapableInterface;
 use Zend\Cache\Storage\FlushableInterface;
+use Zend\Cache\Psr\SimpleCache\SimpleCacheDecorator;
 use PHPMailer\PHPMailer\PHPMailer;
 
 if (!defined('GLPI_ROOT')) {
@@ -97,7 +98,7 @@ class Config extends CommonDBTM {
    function canViewItem() {
       if (isset($this->fields['context']) &&
          ($this->fields['context'] == 'core' ||
-         in_array($this->fields['context'], $_SESSION['glpi_plugins']))) {
+         Plugin::isPluginLoaded($this->fields['context']))) {
          return true;
       }
       return false;
@@ -1583,7 +1584,7 @@ class Config extends CommonDBTM {
     * @since 9.1
    **/
    function showPerformanceInformations() {
-      global $GLPI_CACHE;
+      $GLPI_CACHE = self::getCache('cache_db', 'core', false);
 
       if (!Config::canUpdate()) {
          return false;
@@ -1686,7 +1687,7 @@ class Config extends CommonDBTM {
             Html::displayProgressBar('100', $rate, ['simple'       => true,
                                                     'forcepadding' => false]);
             $class   = 'info-circle missing';
-            $msg     = sprintf(__s('%1$ss memory usage is too low or too high'), $ext);
+            $msg     = sprintf(__s('%1$s memory usage is too low or too high'), $ext);
             if ($rate > 5 && $rate < 50) {
                $class   = 'check-circle ok';
                $msg     = sprintf(__s('%1$s memory usage is correct'), $ext);
@@ -1716,7 +1717,7 @@ class Config extends CommonDBTM {
    }
 
    /**
-    * Display a HTML report about systeme information / configuration
+    * Display a HTML report about system information / configuration
    **/
    function showSystemInformations() {
       global $DB, $CFG_GLPI;
@@ -1738,7 +1739,7 @@ class Config extends CommonDBTM {
       $values = [
          1 => __('1- Critical (login error only)'),
          2 => __('2- Severe (not used)'),
-         3 => __('3- Important (successful logins)'),
+         3 => __('3- Important (successful login)'),
          4 => __('4- Notices (add, delete, tracking)'),
          5 => __('5- Complete (all)'),
       ];
@@ -2561,6 +2562,7 @@ class Config extends CommonDBTM {
          $PHPLOGGER->addRecord(Monolog\Logger::WARNING, "Test logger");
          $can_write_logs = true;
       } catch (\UnexpectedValueException $e) {
+         $catched = true;
          //empty catch
       }
 
@@ -2878,12 +2880,13 @@ class Config extends CommonDBTM {
    /**
     * Get a cache adapter from configuration
     *
-    * @param string $optname name of the configuration field
-    * @param string $context name of the configuration context (default 'core')
+    * @param string  $optname name of the configuration field
+    * @param string  $context name of the configuration context (default 'core')
+    * @param boolean $psr16   Whether to return a PSR16 compliant obkect or not (since ZendTranslator is NOT PSR16 compliant).
     *
     * @return Zend\Cache\Storage\StorageInterface object or false
     */
-   public static function getCache($optname, $context = 'core') {
+   public static function getCache($optname, $context = 'core', $psr16 = true) {
       global $DB, $CFG_GLPI;
 
       if (defined('TU_USER') && !defined('CACHED_TESTS')
@@ -2970,8 +2973,13 @@ class Config extends CommonDBTM {
       // Create adapter
       $cache = false;
       try {
-         $cache = Zend\Cache\StorageFactory::factory($opt);
-         $cache_class = get_class($cache);
+         $storage = Zend\Cache\StorageFactory::factory($opt);
+         if ($psr16) {
+            $cache = new SimpleCacheDecorator($storage);
+         } else {
+            $cache = $storage;
+         }
+         $cache_class = get_class($storage);
       } catch (Exception $e) {
          $cache_class = 'no class';
          if (Session::DEBUG_MODE == $_SESSION['glpi_use_mode']) {

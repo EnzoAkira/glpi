@@ -121,7 +121,7 @@ abstract class CommonITILActor extends CommonDBRelation {
          'START'  => 0,
          'LIMIT'  => 1
       ]);
-      if (count($iterator > 0)) {
+      if (count($iterator) > 0) {
          return true;
       }
       return false;
@@ -152,10 +152,9 @@ abstract class CommonITILActor extends CommonDBRelation {
     * @param $ID              integer ID of the item
     * @param $options   array
     *
-    * @return Nothing (display)
+    * @return void
    **/
    function showUserNotificationForm($ID, $options = []) {
-      global $CFG_GLPI;
 
       $this->check($ID, UPDATE);
 
@@ -230,10 +229,9 @@ abstract class CommonITILActor extends CommonDBRelation {
     * @param $ID              integer ID of the item
     * @param $options   array
     *
-    * @return Nothing (display)
+    * @return void
    **/
    function showSupplierNotificationForm($ID, $options = []) {
-      global $CFG_GLPI;
 
       $this->check($ID, UPDATE);
 

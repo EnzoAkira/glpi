@@ -285,7 +285,13 @@ class Dropdown {
    static function getDropdownName($table, $id, $withcomment = 0, $translate = true, $tooltip = true) {
       global $DB, $CFG_GLPI;
 
+      $dft_retval = "&nbsp;";
+
       $item = getItemForItemtype(getItemTypeForTable($table));
+
+      if (!is_object($item)) {
+         return $dft_retval;
+      }
 
       if ($item instanceof CommonTreeDropdown) {
          return getTreeValueCompleteName($table, $id, $withcomment, $translate, $tooltip);
@@ -439,7 +445,7 @@ class Dropdown {
       }
 
       if (empty($name)) {
-         $name = "&nbsp;";
+         $name = $dft_retval;
       }
 
       if ($withcomment) {
@@ -2421,6 +2427,15 @@ class Dropdown {
                                  AND `commentt`.`field` = 'comment')";
          }
 
+         if ($start > 0 && $multi) {
+            //we want to load last entry of previous page
+            //(and therefore one more result) to check if
+            //entity name must be displayed again
+            --$start;
+            ++$limit;
+            $LIMIT = "LIMIT $limit OFFSET $start";
+         }
+
          $query = "SELECT `$table`.* $addselect
                   FROM `$table`
                   $addjoin
@@ -2509,6 +2524,8 @@ class Dropdown {
                                  if (!$firstitem) {
                                     $title = $item->fields['completename'];
 
+                                    $selection_text = $title;
+
                                     if (isset($item->fields["comment"])) {
                                        $addcomment
                                        = DropdownTranslation::getTranslatedValue($ID, $post['itemtype'],
@@ -2529,6 +2546,7 @@ class Dropdown {
                                                 'disabled' => true];
                                     if ($post['permit_select_parent']) {
                                        $temp['title'] = $title;
+                                       $temp['selection_text'] = $selection_text;
                                        unset($temp['disabled']);
                                     }
                                     array_unshift($parent_datas, $temp);
@@ -2566,6 +2584,8 @@ class Dropdown {
                         $title = $data['completename'];
                      }
 
+                     $selection_text = $title;
+
                      if (isset($data["comment"])) {
                         if (isset($data['transcomment']) && !empty($data['transcomment'])) {
                            $addcomment = $data['transcomment'];
@@ -2574,10 +2594,11 @@ class Dropdown {
                         }
                         $title = sprintf(__('%1$s - %2$s'), $title, $addcomment);
                      }
-                     array_push($datastoadd, ['id'    => $ID,
-                                                   'text'  => $outputval,
-                                                   'level' => (int)$level,
-                                                   'title' => $title]);
+                     array_push($datastoadd, ['id'             => $ID,
+                                              'text'           => $outputval,
+                                              'level'          => (int)$level,
+                                              'title'          => $title,
+                                              'selection_text' => $selection_text]);
                      $count++;
                   }
                   $firstitem = false;

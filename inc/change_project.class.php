@@ -76,8 +76,14 @@ class Change_Project extends CommonDBRelation{
    static function cloneChangeProject ($oldid, $newid) {
       global $DB;
 
-      foreach ($DB->request('glpi_changes_projects',
-                            ['WHERE'  => "`projects_id` = '$oldid'"]) as $data) {
+      $result = $DB->request(
+         [
+            'FROM'  => self::getTable(),
+            'WHERE' => ['projects_id' => $oldid],
+         ]
+      );
+
+      foreach ($result as $data) {
          $cd                  = new Change_Project();
          unset($data['id']);
          $data['projects_id'] = $newid;
@@ -135,7 +141,7 @@ class Change_Project extends CommonDBRelation{
     * @param $project Project object
    **/
    static function showForProject(Project $project) {
-      global $DB, $CFG_GLPI;
+      global $DB;
 
       $ID = $project->getField('id');
       if (!$project->can($ID, READ)) {
@@ -144,7 +150,6 @@ class Change_Project extends CommonDBRelation{
 
       $canedit       = $project->canEdit($ID);
       $rand          = mt_rand();
-      $showentities  = Session::isMultiEntitiesMode();
 
       $query = "SELECT DISTINCT `glpi_changes_projects`.`id` AS linkID,
                                 `glpi_changes`.*
@@ -230,7 +235,7 @@ class Change_Project extends CommonDBRelation{
     * @param $change Change object
    **/
    static function showForChange(Change $change) {
-      global $DB, $CFG_GLPI;
+      global $DB;
 
       $ID = $change->getField('id');
       if (!$change->can($ID, READ)) {
@@ -239,7 +244,6 @@ class Change_Project extends CommonDBRelation{
 
       $canedit      = $change->canEdit($ID);
       $rand         = mt_rand();
-      $showentities = Session::isMultiEntitiesMode();
 
       $query = "SELECT DISTINCT `glpi_changes_projects`.`id` AS linkID,
                                 `glpi_projects`.*

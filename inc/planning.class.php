@@ -1267,7 +1267,7 @@ JAVASCRIPT;
 
       if ($filter_data['type'] != 'event_filter') {
          $icon_type = explode('_', $filter_data['type']);
-         echo "<img class='actor_icon' src='".$CFG_GLPI['root_doc']."/pics/".$icon_type[0].".png'>";
+         echo "<i class='actor_icon fa fa-fw fa-".$icon_type[0]."'></i>";
       }
 
       echo "<label for='$filter_key'>$title</label>";
@@ -1490,7 +1490,7 @@ JAVASCRIPT;
          // do not add an already set user
          if (!isset($_SESSION['glpi_plannings']['plannings']['user_'.$user_data['id']])) {
             $current_group['users']['user_'.$user_data['id']] = [
-               'color'   => self::getPaletteColor('bg',$_SESSION['glpi_plannings_color_index']),
+               'color'   => self::getPaletteColor('bg', $_SESSION['glpi_plannings_color_index']),
                'display' => true,
                'type'    => 'user'
             ];

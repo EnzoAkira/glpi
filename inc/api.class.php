@@ -552,7 +552,7 @@ abstract class API extends CommonGLPI {
                true
             );
 
-            foreach ($found_devices as $devices_id => &$device) {
+            foreach ($found_devices as &$device) {
                unset($device['items_id']);
                unset($device['itemtype']);
                unset($device['is_deleted']);
@@ -1151,7 +1151,7 @@ abstract class API extends CommonGLPI {
                             "ERROR_RANGE_EXCEED_TOTAL");
       }
 
-      foreach ($found as $key => &$fields) {
+      foreach ($found as &$fields) {
          // only keep id in field list
          if ($params['only_id']) {
             $fields = ['id' => $fields['id']];
@@ -1674,7 +1674,7 @@ abstract class API extends CommonGLPI {
       }
 
       if (is_array($input)) {
-         foreach ($input as $key => &$sub_input) {
+         foreach ($input as &$sub_input) {
             $sub_input = self::inputObjectToArray($sub_input);
          }
       }
@@ -1727,6 +1727,17 @@ abstract class API extends CommonGLPI {
                   $current_res = [$object->id => false,
                                  'message'    => __("You don't have permission to perform this action.")];
                } else {
+                  // if parent key not provided in input and present in parameter
+                  // (detected from url for example), try to appent it do input
+                  // This is usefull to have logs in parent (and avoid some warnings in commonDBTM)
+                  if (isset($params['parent_itemtype'])
+                      && isset($params['parent_id'])) {
+                     $fk_parent = getForeignKeyFieldForItemType($params['parent_itemtype']);
+                     if (!property_exists($input, $fk_parent)) {
+                        $input->$fk_parent = $params['parent_id'];
+                     }
+                  }
+
                   //update item
                   $object = Toolbox::sanitize((array)$object);
                   $update_return = $item->update($object);
@@ -2060,7 +2071,7 @@ abstract class API extends CommonGLPI {
       };
 
       // clean html
-      foreach ($messages_after_redirect as $type => $messages) {
+      foreach ($messages_after_redirect as $messages) {
          foreach ($messages as $message) {
             $all_messages[] = Html::clean($message);
          }
@@ -2134,8 +2145,6 @@ abstract class API extends CommonGLPI {
     * @return void
     */
    public function inlineDocumentation($file) {
-      global $CFG_GLPI;
-
       self::header(true, __("API Documentation"));
       echo Html::css("lib/prism/prism.css");
       echo Html::script("lib/prism/prism.js");
@@ -2278,6 +2287,7 @@ abstract class API extends CommonGLPI {
             $hclasses[] = "Problem_Ticket";
             $hclasses[] = "Change_Ticket";
             $hclasses[] = "Item_Ticket";
+            $hclasses[] = "ITILSolution";
             break;
 
          case 'Problem' :
@@ -2286,6 +2296,7 @@ abstract class API extends CommonGLPI {
             $hclasses[] = "Change_Problem";
             $hclasses[] = "Problem_Ticket";
             $hclasses[] = "Item_Problem";
+            $hclasses[] = "ITILSolution";
             break;
 
          case 'Change' :
@@ -2295,6 +2306,7 @@ abstract class API extends CommonGLPI {
             $hclasses[] = "Change_Problem";
             $hclasses[] = "Change_Ticket";
             $hclasses[] = "Change_Item";
+            $hclasses[] = "ITILSolution";
             break;
 
          case 'Project' :

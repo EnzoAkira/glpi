@@ -34,6 +34,11 @@
  * @since 0.85
  */
 
+/**
+ * Following variables have to be defined before inclusion of this file:
+ * @var CommonITILCost $cost
+ */
+
 use Glpi\Event;
 
 // autoload include in objecttask.form (ticketcost, problemcost,...)
@@ -69,7 +74,7 @@ if (isset($_POST["add"])) {
                  //TRANS: %s is the user login
                  sprintf(__('%s purges a cost'), $_SESSION["glpiname"]));
    }
-   Html::redirect(Toolbox::getItemTypeFormURL($itemtype).'?id='.$cost->fields[$fk]);
+   Html::redirect($itemtype::getFormURLWithID($cost->fields[$fk]));
 
 } else if (isset($_POST["update"])) {
    $cost->check($_POST["id"], UPDATE);

@@ -31,7 +31,7 @@
 */
 
 // Current version of GLPI
-define('GLPI_VERSION', '9.3.1');
+define('GLPI_VERSION', '9.3.2');
 if (substr(GLPI_VERSION, -4) === '-dev') {
    //for dev version
    define('GLPI_PREVER', str_replace('-dev', '', GLPI_VERSION));
@@ -41,7 +41,7 @@ if (substr(GLPI_VERSION, -4) === '-dev') {
    );
 } else {
    //for stable version
-   define("GLPI_SCHEMA_VERSION", '9.3.1');
+   define("GLPI_SCHEMA_VERSION", '9.3.2');
 }
 define('GLPI_MIN_PHP', '5.6.0'); // Must also be changed in top of index.php
 define('GLPI_YEAR', '2018');
@@ -203,7 +203,7 @@ $CFG_GLPI["unicity_types"]                = ['Budget', 'Computer', 'Contact', 'C
 
 $CFG_GLPI["state_types"]                  = ['Computer', 'Monitor', 'NetworkEquipment',
                                                   'Peripheral', 'Phone', 'Printer', 'SoftwareLicense',
-                                                  'Certificate'];
+                                                  'Certificate', 'Enclosure', 'Pdu'];
 
 $CFG_GLPI["asset_types"]                  = ['Computer', 'Monitor', 'NetworkEquipment',
                                                   'Peripheral', 'Phone', 'Printer', 'SoftwareLicense',
@@ -488,6 +488,6 @@ $CFG_GLPI['javascript'] = [
    'self-service' => ['colorpicker', 'tinymce']
 ];
 
-//Maximum time, in miliseconds a saved search should not exceed
+//Maximum time, in miliseconds a saved search should not exeed
 //so we count it on display (using automatic mode).
 $CFG_GLPI['max_time_for_count'] = 200;

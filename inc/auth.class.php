@@ -599,7 +599,6 @@ class Auth extends CommonGLPI {
          $this->user->fields["authtype"] = self::DB_GLPI;
       } else if (strstr($login_auth, '-')) {
          $auths = explode('-', $login_auth);
-         $auths_id = $auths[1];
          $this->user->fields["auths_id"] = $auths[1];
          if ($auths[0] == 'ldap') {
             $authtype = self::LDAP;
@@ -658,16 +657,21 @@ class Auth extends CommonGLPI {
                            AuthLdap::IDENTIFIER_LOGIN => $ldap_method["login_field"],
                         ],
                      ];
-                     $user_dn
-                        = AuthLdap::searchUserDn($ds,
-                                                 ['basedn'      => $ldap_method["basedn"],
-                                                       'login_field' => $ldap_method['login_field'],
-                                                       'search_parameters'
-                                                                     => $params,
-                                                       'user_params'
-                                                         => ['method' => AuthLDAP::IDENTIFIER_LOGIN,
-                                                                  'value'  => $login_name],
-                                                         'condition'   => $ldap_method["condition"]]);
+                     try {
+                        $user_dn = AuthLdap::searchUserDn($ds, [
+                           'basedn'            => $ldap_method["basedn"],
+                           'login_field'       => $ldap_method['login_field'],
+                           'search_parameters' => $params,
+                           'condition'         => $ldap_method["condition"],
+                           'user_params'       => [
+                              'method' => AuthLDAP::IDENTIFIER_LOGIN,
+                              'value'  => $login_name
+                           ],
+                        ]);
+                     } catch (\RuntimeException $e) {
+                        Toolbox::logError($e->getMessage());
+                        $user_dn = false;
+                     }
                      if ($user_dn) {
                         $this->user->fields['auths_id'] = $ldap_method['id'];
                         $this->user->getFromLDAP($ds, $ldap_method, $user_dn['dn'], $login_name,
@@ -1047,6 +1051,8 @@ class Auth extends CommonGLPI {
     * @return boolean
     */
    static function useAuthExt() {
+
+      global $CFG_GLPI;
 
       //Get all the ldap directories
       if (AuthLdap::useAuthLdap()) {

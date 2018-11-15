@@ -1476,9 +1476,7 @@ class Search {
             }
             $search_config_top    = "";
             $search_config_bottom = "";
-            if (!isset($_GET['_in_modal'])
-                && Session::haveRightsOr('search_config', [DisplayPreference::PERSONAL,
-                                                                DisplayPreference::GENERAL])) {
+            if (!isset($_GET['_in_modal'])) {
 
                $search_config_top = $search_config_bottom
                   = "<div class='pager_controls'>";
@@ -1496,35 +1494,38 @@ class Search {
                }
                $search_config_top .= $map_link;
 
-               $options_link = "<span class='fa fa-wrench pointer' title='".
-                  __s('Select default items to show')."' onClick=\"$('#%id').dialog('open');\">
-                  <span class='sr-only'>" .  __s('Select default items to show') . "</span></span>";
+               if (Session::haveRightsOr('search_config', [
+                  DisplayPreference::PERSONAL,
+                  DisplayPreference::GENERAL
+               ])) {
+                  $options_link = "<span class='fa fa-wrench pointer' title='".
+                     __s('Select default items to show')."' onClick=\"$('#%id').dialog('open');\">
+                     <span class='sr-only'>" .  __s('Select default items to show') . "</span></span>";
 
-               $search_config_top .= str_replace('%id', 'search_config_top', $options_link);
-               $search_config_bottom .= str_replace('%id', 'search_config_bottom', $options_link);
+                  $search_config_top .= str_replace('%id', 'search_config_top', $options_link);
+                  $search_config_bottom .= str_replace('%id', 'search_config_bottom', $options_link);
 
-               $search_config_top
-                  .= Ajax::createIframeModalWindow('search_config_top',
-                                                   $CFG_GLPI["root_doc"].
-                                                      "/front/displaypreference.form.php?itemtype=".
-                                                      $data['itemtype'],
-                                                   ['title'
-                                                            => __('Select default items to show'),
-                                                         'reloadonclose'
-                                                            => true,
-                                                         'display'
-                                                            => false]);
-               $search_config_bottom
-                  .= Ajax::createIframeModalWindow('search_config_bottom',
-                                                   $CFG_GLPI["root_doc"].
-                                                      "/front/displaypreference.form.php?itemtype=".
-                                                      $data['itemtype'],
-                                                   ['title'
-                                                            => __('Select default items to show'),
-                                                         'reloadonclose'
-                                                            => true,
-                                                         'display'
-                                                            => false]);
+                  $pref_url = $CFG_GLPI["root_doc"]."/front/displaypreference.form.php?itemtype=".
+                              $data['itemtype'];
+                  $search_config_top .= Ajax::createIframeModalWindow(
+                     'search_config_top',
+                     $pref_url,
+                     [
+                        'title'         => __('Select default items to show'),
+                        'reloadonclose' => true,
+                        'display'       => false
+                     ]
+                  );
+                  $search_config_bottom .= Ajax::createIframeModalWindow(
+                     'search_config_bottom',
+                     $pref_url,
+                     [
+                        'title'         => __('Select default items to show'),
+                        'reloadonclose' => true,
+                        'display'       => false
+                     ]
+                  );
+               }
             }
 
             if ($item !== null && $item->maybeDeleted()) {
@@ -1723,7 +1724,7 @@ class Search {
                      $tmpcheck = "&nbsp;";
 
                   } else if ($data['itemtype'] == 'User'
-                           && !Session::isViewAllEntities()
+                           && !Session::canViewAllEntities()
                            && !Session::haveAccessToOneOfEntities(Profile_User::getUserEntities($row["id"], false))) {
                      $tmpcheck = "&nbsp;";
 
@@ -2923,7 +2924,7 @@ class Search {
          // No link
          case 'User' :
             // View all entities
-            if (!Session::isViewAllEntities()) {
+            if (!Session::canViewAllEntities()) {
                $condition = getEntitiesRestrictRequest("", "glpi_profiles_users", '', '', true);
             }
             break;
@@ -3098,7 +3099,7 @@ class Search {
             break;
 
          case 'Config':
-            $availableContexts = ['core'] + $_SESSION['glpi_plugins'];
+            $availableContexts = ['core'] + Plugin::getPlugins();
             $availableContexts = implode("', '", $availableContexts);
             $condition = "`context` IN ('$availableContexts')";
             break;
@@ -4901,11 +4902,15 @@ class Search {
 
             case "glpi_reservationitems.comment" :
                if (empty($data[$num][0]['name'])) {
-                  return "<a title=\"".__s('Modify the comment')."\"
-                           href='".ReservationItem::getFormURLWithID($data["refID"])."' >".__('None')."</a>";
+                  $text = __('None');
+               } else {
+                  $text = Html::resume_text($data[$num][0]['name']);
                }
-               return "<a title=\"".__s('Modify the comment')."\"
-                        href='".ReservationItem::getFormURLWithID($data['refID'])."' >".Html::resume_text($data[$num][0]['name'])."</a>";
+               if (Session::haveRight('reservation', UPDATE)) {
+                  return "<a title=\"".__s('Modify the comment')."\"
+                           href='".ReservationItem::getFormURLWithID($data["refID"])."' >".$text."</a>";
+               }
+               return $text;
 
             case 'glpi_crontasks.description' :
                $tmp = new CronTask();
@@ -4984,11 +4989,9 @@ class Search {
                if (isset($data[$num][0]['content'])
                    && isset($data[$num][0]['id'])
                    && isset($data[$num][0]['status'])) {
-                  $link = Toolbox::getItemTypeFormURL($itemtype);
+                  $link = $itemtype::getFormURLWithID($data[$num][0]['id']);
 
                   $out  = "<a id='$itemtype".$data[$num][0]['id']."' href=\"".$link;
-                  $out .= (strstr($link, '?') ?'&amp;' :  '?');
-                  $out .= 'id='.$data[$num][0]['id'];
                   // Force solution tab if solved
                   if ($item = getItemForItemtype($itemtype)) {
                      if (in_array($data[$num][0]['status'], $item->getSolvedStatusArray())) {
@@ -6115,7 +6118,7 @@ class Search {
 
          case self::SYLK_OUTPUT : //sylk
             global $SYLK_ARRAY,$SYLK_HEADER,$SYLK_SIZE;
-            $value                  = Html::weblink_extract($value);
+            $value                  = Html::weblink_extract(Html::clean($value));
             $value = preg_replace('/'.self::LBBR.'/', '<br>', $value);
             $value = preg_replace('/'.self::LBHR.'/', '<hr>', $value);
             $SYLK_ARRAY[$row][$num] = self::sylk_clean($value);
@@ -6126,7 +6129,7 @@ class Search {
          case self::CSV_OUTPUT : //csv
             $value = preg_replace('/'.self::LBBR.'/', '<br>', $value);
             $value = preg_replace('/'.self::LBHR.'/', '<hr>', $value);
-            $value = Html::weblink_extract($value);
+            $value = Html::weblink_extract(Html::clean($value));
             $out   = "\"".self::csv_clean($value)."\"".$_SESSION["glpicsv_delimiter"];
             break;
 
