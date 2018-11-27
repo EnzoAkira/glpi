@@ -1859,7 +1859,7 @@ class Config extends CommonDBTM {
       // No need to translate, this part always display in english (for copy/paste to forum)
 
       // Try to compute a better version for .git
-      $ver = $CFG_GLPI['version'];
+      $ver = GLPI_VERSION;
       if (is_dir(GLPI_ROOT."/.git")) {
          $dir = getcwd();
          chdir(GLPI_ROOT);
@@ -2919,7 +2919,6 @@ class Config extends CommonDBTM {
             return false;
          }
          $opt = json_decode($conf[$optname], true);
-         Toolbox::logDebug("CACHE CONFIG  $optname", $opt);
       }
       if (!isset($opt['options']['namespace'])) {
          $namespace = "glpi_${optname}_" . GLPI_VERSION;
@@ -2986,7 +2985,6 @@ class Config extends CommonDBTM {
             Toolbox::logError($e->getMessage());
          }
       }
-      Toolbox::logDebug("CACHE $optname", $cache_class);
       return $cache;
    }
 

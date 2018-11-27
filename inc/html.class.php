@@ -4323,6 +4323,7 @@ class Html {
                if ($.trim(params.term) === '') {
                   return data;
                }
+<<<<<<< HEAD
 
                // Skip if there is no 'children' property
                if (typeof data.children === 'undefined') {
@@ -4356,6 +4357,41 @@ class Html {
                   return modifiedData;
                }
 
+=======
+
+               // Skip if there is no 'children' property
+               if (typeof data.children === 'undefined') {
+                  if (typeof data.text === 'string'
+                     && data.text.toUpperCase().indexOf(params.term.toUpperCase()) >= 0
+                  ) {
+                     return data;
+                  }
+                  return null;
+               }
+
+               // `data.children` contains the actual options that we are matching against
+               // also check in `data.text` (optgroup title)
+               var filteredChildren = [];
+               $.each(data.children, function (idx, child) {
+                  if (child.text.toUpperCase().indexOf(params.term.toUpperCase()) != -1
+                     || data.text.toUpperCase().indexOf(params.term.toUpperCase()) != -1
+                  ) {
+                     filteredChildren.push(child);
+                  }
+               });
+
+               // If we matched any of the group's children, then set the matched children on the group
+               // and return the group object
+               if (filteredChildren.length) {
+                  var modifiedData = $.extend({}, data, true);
+                  modifiedData.children = filteredChildren;
+
+                  // You can return modified objects from here
+                  // This includes matching the `children` how you want in nested data sets
+                  return modifiedData;
+               }
+
+>>>>>>> 0cbfde346c5afd6b749a2dd893fd4c0fa3c49c74
                // Return `null` if the term should not be displayed
                return null;
             },
@@ -6489,7 +6525,7 @@ class Html {
                         break;
 
                      default :
-                        echo "<span>".Html::link($key, $CFG_GLPI["root_doc"].$val)."</span>";
+                        echo "<span>".Html::link($key, $CFG_GLPI["root_doc"].$val, ['class' => 'pointer'])."</span>";
                         break;
                   }
                }

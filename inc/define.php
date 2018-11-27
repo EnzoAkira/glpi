@@ -31,7 +31,11 @@
 */
 
 // Current version of GLPI
+<<<<<<< HEAD
 define('GLPI_VERSION', '9.3.2');
+=======
+define('GLPI_VERSION', '9.3.3');
+>>>>>>> 0cbfde346c5afd6b749a2dd893fd4c0fa3c49c74
 if (substr(GLPI_VERSION, -4) === '-dev') {
    //for dev version
    define('GLPI_PREVER', str_replace('-dev', '', GLPI_VERSION));
