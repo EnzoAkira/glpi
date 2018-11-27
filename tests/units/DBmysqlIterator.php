@@ -200,23 +200,44 @@ class DBmysqlIterator extends DbTestCase {
 
 
    public function testOrder() {
+      $it = $this->it->execute('foo', ['ORDERBY' => 'bar']);
+      $this->string($it->getSql())->isIdenticalTo('SELECT * FROM `foo` ORDER BY `bar`');
+
       $it = $this->it->execute('foo', ['ORDER' => 'bar']);
       $this->string($it->getSql())->isIdenticalTo('SELECT * FROM `foo` ORDER BY `bar`');
+
+      $it = $this->it->execute('foo', ['ORDERBY' => '`baz`']);
+      $this->string($it->getSql())->isIdenticalTo('SELECT * FROM `foo` ORDER BY `baz`');
 
       $it = $this->it->execute('foo', ['ORDER' => '`baz`']);
       $this->string($it->getSql())->isIdenticalTo('SELECT * FROM `foo` ORDER BY `baz`');
 
+      $it = $this->it->execute('foo', ['ORDERBY' => 'bar ASC']);
+      $this->string($it->getSql())->isIdenticalTo('SELECT * FROM `foo` ORDER BY `bar` ASC');
+
       $it = $this->it->execute('foo', ['ORDER' => 'bar ASC']);
       $this->string($it->getSql())->isIdenticalTo('SELECT * FROM `foo` ORDER BY `bar` ASC');
+
+      $it = $this->it->execute('foo', ['ORDERBY' => 'bar DESC']);
+      $this->string($it->getSql())->isIdenticalTo('SELECT * FROM `foo` ORDER BY `bar` DESC');
 
       $it = $this->it->execute('foo', ['ORDER' => 'bar DESC']);
       $this->string($it->getSql())->isIdenticalTo('SELECT * FROM `foo` ORDER BY `bar` DESC');
 
+      $it = $this->it->execute('foo', ['ORDERBY' => ['`a`', 'b ASC', 'c DESC']]);
+      $this->string($it->getSql())->isIdenticalTo('SELECT * FROM `foo` ORDER BY `a`, `b` ASC, `c` DESC');
+
       $it = $this->it->execute('foo', ['ORDER' => ['`a`', 'b ASC', 'c DESC']]);
       $this->string($it->getSql())->isIdenticalTo('SELECT * FROM `foo` ORDER BY `a`, `b` ASC, `c` DESC');
 
+      $it = $this->it->execute('foo', ['ORDERBY' => 'bar, baz ASC']);
+      $this->string($it->getSql())->isIdenticalTo('SELECT * FROM `foo` ORDER BY `bar`, `baz` ASC');
+
       $it = $this->it->execute('foo', ['ORDER' => 'bar, baz ASC']);
       $this->string($it->getSql())->isIdenticalTo('SELECT * FROM `foo` ORDER BY `bar`, `baz` ASC');
+
+      $it = $this->it->execute('foo', ['ORDERBY' => 'bar DESC, baz ASC']);
+      $this->string($it->getSql())->isIdenticalTo('SELECT * FROM `foo` ORDER BY `bar` DESC, `baz` ASC');
 
       $it = $this->it->execute('foo', ['ORDER' => 'bar DESC, baz ASC']);
       $this->string($it->getSql())->isIdenticalTo('SELECT * FROM `foo` ORDER BY `bar` DESC, `baz` ASC');
@@ -339,8 +360,27 @@ class DBmysqlIterator extends DbTestCase {
          }
       )->error()
          ->withType(E_USER_ERROR)
-         ->withMessage('BAD FOREIGN KEY, should be [ key1, key2 ]')
+         ->withMessage('BAD FOREIGN KEY, should be [ table1 => key1, table2 => key2 ] or [ table1 => key1, table2 => key2, [criteria]]')
          ->exists();
+
+      //test conditions
+      $it = $this->it->execute(
+         'foo', [
+            'LEFT JOIN' => [
+               'bar' => [
+                  'FKEY' => [
+                     'bar' => 'id',
+                     'foo' => 'fk', [
+                        'OR'  => ['field' => ['>', 20]]
+                     ]
+                  ]
+               ]
+            ]
+         ]
+      );
+      $this->string($it->getSql())->isIdenticalTo(
+         'SELECT * FROM `foo` LEFT JOIN `bar` ON (`bar`.`id` = `foo`.`fk` OR `field` > \'20\')'
+      );
    }
 
 
@@ -430,10 +470,19 @@ class DBmysqlIterator extends DbTestCase {
       $it = $this->it->execute(['foo'], ['GROUPBY' => ['id']]);
       $this->string($it->getSql())->isIdenticalTo('SELECT * FROM `foo` GROUP BY `id`');
 
+      $it = $this->it->execute(['foo'], ['GROUP' => ['id']]);
+      $this->string($it->getSql())->isIdenticalTo('SELECT * FROM `foo` GROUP BY `id`');
+
       $it = $this->it->execute(['foo'], ['GROUPBY' => 'id']);
       $this->string($it->getSql())->isIdenticalTo('SELECT * FROM `foo` GROUP BY `id`');
 
+      $it = $this->it->execute(['foo'], ['GROUP' => 'id']);
+      $this->string($it->getSql())->isIdenticalTo('SELECT * FROM `foo` GROUP BY `id`');
+
       $it = $this->it->execute(['foo'], ['GROUPBY' => ['id', 'name']]);
+      $this->string($it->getSql())->isIdenticalTo('SELECT * FROM `foo` GROUP BY `id`, `name`');
+
+      $it = $this->it->execute(['foo'], ['GROUP' => ['id', 'name']]);
       $this->string($it->getSql())->isIdenticalTo('SELECT * FROM `foo` GROUP BY `id`, `name`');
    }
 
@@ -447,6 +496,17 @@ class DBmysqlIterator extends DbTestCase {
          ->withType(E_USER_ERROR)
          ->withMessage('Missing group by field')
          ->exists();
+
+      $this->when(
+         function () {
+            $it = $this->it->execute(['foo'], ['GROUP' => []]);
+            $this->string('SELECT * FROM `foo`', $it->getSql(), 'No group by field');
+         }
+      )->error()
+         ->withType(E_USER_ERROR)
+         ->withMessage('Missing group by field')
+         ->exists();
+
    }
 
    public function testRange() {
@@ -500,7 +560,27 @@ class DBmysqlIterator extends DbTestCase {
          ]
       ];
       $it = $this->it->execute($crit);
-      $this->string($it->getSql())->isIdenticalTo("SELECT * FROM `foo` WHERE `bar` = 'baz' AND ((SELECT COUNT(*) FROM xyz) = 5)");
+      $this->string($it->getSql())->isIdenticalTo("SELECT * FROM `foo` WHERE `bar` = 'baz' AND ((SELECT COUNT(*) FROM xyz) = '5')");
+
+      $crit = [
+         'FROM'   => 'foo',
+         'WHERE'  => [
+            'bar' => 'baz',
+            'RAW' => ['SELECT COUNT(*) FROM xyz' => ['>', 2]]
+         ]
+      ];
+      $it = $this->it->execute($crit);
+      $this->string($it->getSql())->isIdenticalTo("SELECT * FROM `foo` WHERE `bar` = 'baz' AND ((SELECT COUNT(*) FROM xyz) > '2')");
+
+      $crit = [
+         'FROM'   => 'foo',
+         'WHERE'  => [
+            'bar' => 'baz',
+            'RAW' => ['SELECT COUNT(*) FROM xyz' => [3, 4]]
+         ]
+      ];
+      $it = $this->it->execute($crit);
+      $this->string($it->getSql())->isIdenticalTo("SELECT * FROM `foo` WHERE `bar` = 'baz' AND ((SELECT COUNT(*) FROM xyz) IN ('3', '4'))");
    }
 
 

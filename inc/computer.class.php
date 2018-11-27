@@ -964,7 +964,11 @@ class Computer extends CommonDBTM {
          'table'              => 'glpi_items_deviceharddrives',
          'field'              => 'capacity',
          'name'               => __('Hard drive size'),
+<<<<<<< HEAD
          'unit'               => 'Mio',
+=======
+         'unit'               => 'auto',
+>>>>>>> 0cbfde346c5afd6b749a2dd893fd4c0fa3c49c74
          'forcegroupby'       => true,
          'usehaving'          => true,
          'datatype'           => 'number',

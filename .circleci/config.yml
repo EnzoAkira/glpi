@@ -22,13 +22,16 @@ shared: &shared
           rm -f composer.lock
           composer install --optimize-autoloader
     - run:
+        name: PHP Parallel Lint
+        command: vendor/bin/parallel-lint  --exclude files --exclude plugins --exclude vendor --exclude tools/vendor .
+    - run:
         name: Update DB
         command: |
           mysql -h 127.0.0.1 -u root -e 'create database glpitest0723;'
           mysql -h 127.0.0.1 -u root glpitest0723 < tests/glpi-0.72.3-empty.sql
           cp tests/circleci.config_db.php tests/config_db.php
-          php scripts/cliupdate.php --config-dir=../tests --dev
-          php scripts/cliupdate.php --config-dir=../tests --dev |grep -q "No migration needed." || (echo "scripts/cliupdate.php FAILED" && exit 1)
+          php scripts/cliupdate.php --config-dir=../tests --dev --tests
+          php scripts/cliupdate.php --config-dir=../tests --dev --tests |grep -q "No migration needed." || (echo "scripts/cliupdate.php FAILED" && exit 1)
           php scripts/innodb_migration.php --config-dir=../tests
           rm tests/config_db.php
     - run:
@@ -36,21 +39,21 @@ shared: &shared
         command: |
           mysql -h 127.0.0.1 -u root -e 'create database glpitest;'
           php scripts/cliinstall.php --db=glpitest --host=127.0.0.1 --user=root --tests
-          php scripts/cliupdate.php --config-dir=../tests |grep -q "No migration needed." || (echo "scripts/cliupdate.php FAILED" && exit 1)
-    - run:
-        name: Database tests
-        command: composer testdb
-    - run:
-        name: Functionnal tests
-        command: composer testfunc
+          php scripts/cliupdate.php --config-dir=../tests --tests |grep -q "No migration needed." || (echo "scripts/cliupdate.php FAILED" && exit 1)
     - run:
         name: Unit tests
-        command: composer testunits
+        command: php vendor/bin/atoum -p 'php -d memory_limit=512M' --debug --force-terminal --use-dot-report --configurations tests/telemetry.php --bootstrap-file tests/bootstrap.php --no-code-coverage -d tests/units
+    - run:
+        name: Database tests
+        command: php vendor/bin/atoum -p 'php -d memory_limit=512M' --debug --force-terminal --use-dot-report --configurations tests/telemetry.php --bootstrap-file tests/bootstrap.php --no-code-coverage --max-children-number 1 -d tests/database
+    - run:
+        name: Functionnal tests
+        command: php vendor/bin/atoum -p 'php -d memory_limit=512M' --debug --force-terminal --use-dot-report --configurations tests/telemetry.php --bootstrap-file tests/bootstrap.php --no-code-coverage --max-children-number 1 -d tests/functionnal
     - run:
         name: WEB tests
         command: |
           php -S localhost:8088 tests/router.php &>/dev/null &
-          composer testweb
+          php vendor/bin/atoum -p 'php -d memory_limit=512M' --debug --force-terminal --use-dot-report --configurations tests/telemetry.php --bootstrap-file tests/bootstrap.php --no-code-coverage --max-children-number 1 -d tests/web
 #    - run:
 #        name: LDAP tests
 #        command: |
@@ -58,7 +61,7 @@ shared: &shared
 #          composer testldap
     - run:
         name: Coding standards
-        command: php --version|grep "7\.2" > /dev/null && composer cs || echo "No CS for this version"
+        command: if [[ $(php --version|grep "7\.2") ]]; then vendor/bin/phpcs -d memory_limit=512M -p --standard=vendor/glpi-project/coding-standard/GlpiStandard/ --ignore=/vendor/,/plugins/,/files/,/lib/,/config/,/tests/config,/css/tiny_mce,/.git ./; else echo "No CS for this version"; fi
     - run:
         name: sensiolabs/security-checker
         command: vendor/bin/security-checker security:check

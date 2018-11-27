@@ -391,12 +391,15 @@ class Ticket extends CommonITILObject {
     */
    public function canTakeIntoAccount() {
 
+<<<<<<< HEAD
       // Ticket already taken into account
       if (array_key_exists('takeintoaccount_delay_stat', $this->fields)
           && $this->fields['takeintoaccount_delay_stat'] != 0) {
          return false;
       }
 
+=======
+>>>>>>> 0cbfde346c5afd6b749a2dd893fd4c0fa3c49c74
       // Can take into account if user is assigned user
       if ($this->isUser(CommonITILActor::ASSIGN, Session::getLoginUserID())
           || (isset($_SESSION["glpigroups"])
@@ -425,6 +428,20 @@ class Ticket extends CommonITILObject {
       // assuming that users that does not have those rights cannot treat the ticket.
       return $canAddTask || $canAddFollowup;
    }
+<<<<<<< HEAD
+=======
+
+   /**
+    * Check if ticket has already been taken into account.
+    *
+    * @return boolean
+    */
+   public function isAlreadyTakenIntoAccount() {
+
+      return array_key_exists('takeintoaccount_delay_stat', $this->fields)
+          && $this->fields['takeintoaccount_delay_stat'] != 0;
+   }
+>>>>>>> 0cbfde346c5afd6b749a2dd893fd4c0fa3c49c74
 
    /**
     * Get Datas to be added for SLA add
@@ -1585,7 +1602,11 @@ class Ticket extends CommonITILObject {
 
    function pre_updateInDB() {
 
+<<<<<<< HEAD
       if ($this->canTakeIntoAccount()) {
+=======
+      if (!$this->isAlreadyTakenIntoAccount() && $this->canTakeIntoAccount()) {
+>>>>>>> 0cbfde346c5afd6b749a2dd893fd4c0fa3c49c74
          $this->updates[]                            = "takeintoaccount_delay_stat";
          $this->fields['takeintoaccount_delay_stat'] = $this->computeTakeIntoAccountDelayStat();
       }
@@ -2550,7 +2571,13 @@ class Ticket extends CommonITILObject {
    function updateDateMod($ID, $no_stat_computation = false, $users_id_lastupdater = 0) {
 
       if ($this->getFromDB($ID)) {
+<<<<<<< HEAD
          if (!$no_stat_computation && ($this->canTakeIntoAccount() || isCommandLine())) {
+=======
+         if (!$no_stat_computation
+             && !$this->isAlreadyTakenIntoAccount()
+             && ($this->canTakeIntoAccount() || isCommandLine())) {
+>>>>>>> 0cbfde346c5afd6b749a2dd893fd4c0fa3c49c74
             return $this->update(
                [
                   'id'                         => $ID,
@@ -2706,7 +2733,7 @@ class Ticket extends CommonITILObject {
          if (Session::haveRight(self::$rightname, UPDATE)) {
             $actions[__CLASS__.MassiveAction::CLASS_ACTION_SEPARATOR.'add_actor']
                = __('Add an actor');
-            $actions[__CLASS__.MassiveAction::CLASS_ACTION_SEPARATOR.'enable_notif']
+            $actions[__CLASS__.MassiveAction::CLASS_ACTION_SEPARATOR.'update_notif']
                = __('Set notifications for all actors');
             $actions['Ticket_Ticket'.MassiveAction::CLASS_ACTION_SEPARATOR.'add']
                = _x('button', 'Link tickets');
