@@ -680,21 +680,12 @@ class MailCollector  extends CommonDBTM {
                if (isset($tkt['_blacklisted']) && $tkt['_blacklisted']) {
                   $this->deleteMails($uid, self::REFUSED_FOLDER);
                   $blacklisted++;
-<<<<<<< HEAD
 
                } else if (isset($tkt['_refuse_email_with_response'])) {
                   $this->deleteMails($uid, self::REFUSED_FOLDER);
                   $refused++;
                   $this->sendMailRefusedResponse($tkt['_head']['from'], $tkt['name']);
 
-=======
-
-               } else if (isset($tkt['_refuse_email_with_response'])) {
-                  $this->deleteMails($uid, self::REFUSED_FOLDER);
-                  $refused++;
-                  $this->sendMailRefusedResponse($tkt['_head']['from'], $tkt['name']);
-
->>>>>>> 0cbfde346c5afd6b749a2dd893fd4c0fa3c49c74
                } else if (isset($tkt['_refuse_email_no_response'])) {
                   $this->deleteMails($uid, self::REFUSED_FOLDER);
                   $refused++;
@@ -708,11 +699,7 @@ class MailCollector  extends CommonDBTM {
                   // New ticket case
                   $ticket = new Ticket();
 
-<<<<<<< HEAD
-                  if (!$is_user_anonymous
-=======
                   if (!$CFG_GLPI["use_anonymous_helpdesk"]
->>>>>>> 0cbfde346c5afd6b749a2dd893fd4c0fa3c49c74
                       && !Profile::haveUserRight($tkt['_users_id_requester'],
                                                  Ticket::$rightname,
                                                  CREATE,
@@ -740,11 +727,7 @@ class MailCollector  extends CommonDBTM {
                      $error++;
                      $rejinput['reason'] = NotImportedEmail::FAILED_OPERATION;
                      $rejected->add($rejinput);
-<<<<<<< HEAD
-                  } else if (!$is_user_anonymous
-=======
                   } else if (!$CFG_GLPI['use_anonymous_followups']
->>>>>>> 0cbfde346c5afd6b749a2dd893fd4c0fa3c49c74
                              && !$ticket->canUserAddFollowups($tkt['_users_id_requester'])) {
                      $this->deleteMails($uid, self::REFUSED_FOLDER);
                      $refused++;
@@ -1006,11 +989,7 @@ class MailCollector  extends CommonDBTM {
                if ($end_strip >= 0) {
                   // Remove contents between beginning of line and footer
                   $content[$end_strip] = preg_replace(
-<<<<<<< HEAD
-                     '/^.*' . $footer_pattern . '$/',
-=======
                      '/^.*' . $footer_pattern . '/',
->>>>>>> 0cbfde346c5afd6b749a2dd893fd4c0fa3c49c74
                      '',
                      $content[$end_strip]
                   );

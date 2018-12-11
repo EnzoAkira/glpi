@@ -506,7 +506,7 @@ class Lock {
 
       switch ($ma->getAction()) {
          case 'unlock' :
-            $types = ['Monitor'                => _n('Monitor', 'Monitors', Session::getPluralNumber()),
+            $types = [     'Monitor'                => _n('Monitor', 'Monitors', Session::getPluralNumber()),
                            'Peripheral'             => _n('Device', 'Devices', Session::getPluralNumber()),
                            'Printer'                => _n('Printer', 'Printers', Session::getPluralNumber()),
                            'SoftwareVersion'        => _n('Version', 'Versions', Session::getPluralNumber()),
