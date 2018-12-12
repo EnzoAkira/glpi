@@ -87,7 +87,7 @@ class NetworkName extends FQDNLabel {
     *     - target for the Form
     *     - withtemplate template or basic computer
     *
-    *@return Nothing (display)
+    * @return Nothing (display)
    **/
    function showForm($ID, $options = []) {
       global $CFG_GLPI;
@@ -455,7 +455,7 @@ class NetworkName extends FQDNLabel {
 
       echo "<td>".FQDN::getTypeName(1)."</td><td>";
       Dropdown::show(getItemTypeForTable(getTableNameForForeignKeyField("fqdns_id")),
-                     ['value'       => $name->fields["fqdns_id"],
+                           ['value'       => $name->fields["fqdns_id"],
                            'name'        => 'NetworkName_fqdns_id',
                            'entity'      => $name->getEntityID(),
                            'displaywith' => ['view']]);

@@ -37,6 +37,9 @@ Session::checkRight("internet", READ);
 Html::header(NetworkName::getTypeName(Session::getPluralNumber()), $_SERVER['PHP_SELF'], 'config', 'commondropdown',
             'NetworkName');
 
+Dropdown::showItemTypeMenu(_n('Dropdown', 'Dropdowns', Session::getPluralNumber()),
+            Dropdown::getStandardDropdownItemTypes(),'/front/networkname.php');
+
 Search::show('NetworkName');
 
 Html::footer();
